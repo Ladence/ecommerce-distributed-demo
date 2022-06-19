@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option go_package = "./eventstore";
+
+message Event {
+  string event_id = 1;
+  string event_type = 2;
+  string aggregate_id = 3;
+  string aggregate_type = 4;
+  string event_data = 5;
+  string stream = 6;
+}
+
+message CreateEventRequest {
+  Event event = 1;
+}
+
+message CreateEventResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message GetEventsRequest {
+  string event_id = 1;
+  string aggregate_id = 2;
+}
+
+message GetEventsResponse {
+  repeated Event events = 1;
+}
+
+service EventSource {
+  rpc CreateEvent (CreateEventRequest) returns (CreateEventResponse);
+  rpc GetEvents (GetEventsRequest) returns (GetEventsResponse);
+  rpc GetEventsStream (GetEventsRequest) returns (stream Event);
+}

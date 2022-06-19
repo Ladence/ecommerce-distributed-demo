@@ -1,0 +1,64 @@
+package main
+
+import (
+	"context"
+	"flag"
+	"fmt"
+	"github.com/Ladence/ecommerce-distributed-demo/eventstore"
+	"github.com/Ladence/ecommerce-distributed-demo/eventsvc/storage"
+	nats "github.com/nats-io/nats.go"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"log"
+	"net"
+)
+
+type Server struct {
+	eventstore.UnimplementedEventSourceServer
+	store storage.Repository
+	nats  nats.JetStreamContext
+}
+
+func NewServer(store storage.Repository) *Server {
+	return &Server{store: store}
+}
+
+func (s *Server) CreateEvent(ctx context.Context, request *eventstore.CreateEventRequest) (*eventstore.CreateEventResponse, error) {
+	if err := s.store.CreateEvent(ctx, request.Event); err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	publishEvent(s.nats, request.Event)
+	return &eventstore.CreateEventResponse{Success: true}, nil
+}
+
+func (s *Server) GetEvents(ctx context.Context, request *eventstore.GetEventsRequest) (*eventstore.GetEventsResponse, error) {
+	events, err := s.store.GetEvents(ctx, request)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &eventstore.GetEventsResponse{Events: events}, nil
+}
+
+func publishEvent(natsCtx nats.JetStreamContext, event *eventstore.Event) {
+	ack, err := natsCtx.Publish(event.EventType, []byte(event.EventData))
+	if err != nil {
+		log.Printf("error on publishing event (+%v), err: %v\n", event, err)
+		return
+	}
+	log.Printf("succesfully published an event! stream: %s\n", ack.Stream)
+}
+
+func main() {
+	port := flag.String("port", "50001", "port for grpc server")
+	flag.Parse()
+
+	conn, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", port))
+	grpcServer := grpc.NewServer()
+	server := NewServer(storage.Mock{})
+	eventstore.RegisterEventSourceServer(grpcServer, server)
+	log.Println("registered a grpc server")
+	if err := grpcServer.Serve(conn); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+}
