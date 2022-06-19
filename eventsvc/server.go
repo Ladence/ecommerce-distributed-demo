@@ -28,7 +28,7 @@ func (s *Server) CreateEvent(ctx context.Context, request *eventstore.CreateEven
 	if err := s.store.CreateEvent(ctx, request.Event); err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
-	publishEvent(s.nats, request.Event)
+	go publishEvent(s.nats, request.Event)
 	return &eventstore.CreateEventResponse{Success: true}, nil
 }
 
