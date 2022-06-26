@@ -16,19 +16,19 @@ import (
 
 type Server struct {
 	eventstore.UnimplementedEventSourceServer
-	store storage.Repository
-	nats  nats.JetStreamContext
+	store   storage.Repository
+	natsCtx nats.JetStreamContext
 }
 
-func NewServer(store storage.Repository) *Server {
-	return &Server{store: store}
+func NewServer(store storage.Repository, streamContext nats.JetStreamContext) *Server {
+	return &Server{store: store, natsCtx: streamContext}
 }
 
 func (s *Server) CreateEvent(ctx context.Context, request *eventstore.CreateEventRequest) (*eventstore.CreateEventResponse, error) {
 	if err := s.store.CreateEvent(ctx, request.Event); err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
-	go publishEvent(s.nats, request.Event)
+	go publishEvent(s.natsCtx, request.Event)
 	return &eventstore.CreateEventResponse{Success: true}, nil
 }
 
@@ -55,7 +55,18 @@ func main() {
 
 	conn, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", port))
 	grpcServer := grpc.NewServer()
-	server := NewServer(storage.Mock{})
+
+	ntConn, err := nats.Connect(nats.DefaultURL)
+	if err != nil {
+		log.Fatalf("error on connecting natsCtx: %v", err)
+	}
+
+	ntCtx, err := ntConn.JetStream()
+	if err != nil {
+		log.Fatalf("error on perceiving natsCtx JetStream context: %v", err)
+	}
+
+	server := NewServer(storage.Mock{}, ntCtx)
 	eventstore.RegisterEventSourceServer(grpcServer, server)
 	log.Println("registered a grpc server")
 	if err := grpcServer.Serve(conn); err != nil {
