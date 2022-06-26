@@ -14,6 +14,13 @@ type sqliteRepository struct {
 	db *sql.DB
 }
 
+// todo: отрефакорить асап и инжектить в NewSqliteRepository *sql.DB
+func NewDbRepository(db *sql.DB) *sqliteRepository {
+	return &sqliteRepository{
+		db: db,
+	}
+}
+
 func NewSqliteRepository(connectionString string) (*sqliteRepository, error) {
 	dbEvents, err := sql.Open("sqlite3", connectionString)
 	if err != nil {
@@ -49,12 +56,13 @@ func setupSchema(db *sql.DB) error {
 
 func (d *sqliteRepository) CreateEvent(ctx context.Context, event *eventstore.Event) error {
 	var e error
-	query := "INSERT INTO events(id, eventtype, aggregateid, aggregatetype, eventdata, stream) VALUES ($1, $2, $3, $4, $5, $6)"
+	query := "INSERT INTO events (id, eventtype, aggregateid, aggregatetype, eventdata, stream) VALUES ($1, $2, $3, $4, $5, $6);"
 	if event.EventData == "" {
 		query = strings.Replace(query, "$5", "NULL", 1)
-		_, e = d.db.ExecContext(ctx, query, event.EventId, event.AggregateId, event.AggregateType, event.Stream)
+		query = strings.Replace(query, "$6", "$5", 1)
+		_, e = d.db.ExecContext(ctx, query, event.EventId, event.EventType, event.AggregateId, event.AggregateType, event.Stream)
 	} else {
-		_, e = d.db.ExecContext(ctx, query, event.EventId, event.AggregateId, event.AggregateType, event.EventData, event.Stream)
+		_, e = d.db.ExecContext(ctx, query, event.EventId, event.EventType, event.AggregateId, event.AggregateType, event.EventData, event.Stream)
 	}
 	return e
 }
@@ -65,16 +73,16 @@ func (d *sqliteRepository) GetEvents(ctx context.Context, filter *eventstore.Get
 	var query string
 
 	if filter.EventId == "" && filter.AggregateId == "" {
-		query = "SELECT id, eventtype, aggregateid, aggregatetype, eventdata FROM events"
+		query = "SELECT id, eventtype, aggregateid, aggregatetype, eventdata FROM events;"
 		rows, e = d.db.QueryContext(ctx, query)
 	} else if filter.EventId != "" && filter.AggregateId == "" {
-		query = "SELECT id, eventtype, aggregateid, aggregatetype, eventdata FROM events WHERE id=$1"
+		query = "SELECT id, eventtype, aggregateid, aggregatetype, eventdata FROM events WHERE id=$1;"
 		rows, e = d.db.QueryContext(ctx, query, filter.EventId)
 	} else if filter.EventId == "" && filter.AggregateId != "" {
-		query = "SELECT id, eventtype, aggregateid, aggregatetype, eventdata FROM events WHERE aggregateid=$1"
+		query = "SELECT id, eventtype, aggregateid, aggregatetype, eventdata FROM events WHERE aggregateid=$1;"
 		rows, e = d.db.QueryContext(ctx, query, filter.AggregateId)
 	} else if filter.EventId != "" && filter.AggregateId != "" {
-		query = "SELECT id, eventtype, aggregateid, aggregatetype, eventdata FROM events WHERE id=$1 AND aggregateid=$2"
+		query = "SELECT id, eventtype, aggregateid, aggregatetype, eventdata FROM events WHERE id=$1 AND aggregateid=$2;"
 		rows, e = d.db.QueryContext(ctx, query, filter.EventId, filter.AggregateId)
 	}
 	if e != nil {
