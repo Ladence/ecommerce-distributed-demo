@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/Ladence/ecommerce-distributed-demo/eventstore"
 	"github.com/Ladence/ecommerce-distributed-demo/eventsvc/storage"
-	nats "github.com/nats-io/nats.go"
+	db_repository "github.com/Ladence/ecommerce-distributed-demo/eventsvc/storage/db-repository"
+	"github.com/nats-io/nats.go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -66,7 +67,12 @@ func main() {
 		log.Fatalf("error on perceiving natsCtx JetStream context: %v", err)
 	}
 
-	server := NewServer(storage.Mock{}, ntCtx)
+	repo, err := db_repository.NewSqliteRepository("events.db")
+	if err != nil {
+		log.Fatalf("error on creating sqlite repository: %v", err)
+	}
+
+	server := NewServer(repo, ntCtx)
 	eventstore.RegisterEventSourceServer(grpcServer, server)
 	log.Println("registered a grpc server")
 	if err := grpcServer.Serve(conn); err != nil {
