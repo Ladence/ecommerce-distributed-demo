@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Ladence/ecommerce-distributed-demo/eventstore"
-	"regexp"
 	"testing"
 )
 
@@ -33,8 +32,7 @@ func TestCreateEvent(t *testing.T) {
 				},
 			},
 			beforeTest: func(s sqlmock.Sqlmock) {
-				s.ExpectQuery(regexp.QuoteMeta(`INSERT INTO events (id, eventtype, aggregateid, aggregatetype, eventdata, stream) VALUES ($1, $2, $3, $4, NULL, $5);`)).
-					WithArgs("1", "order_created", "1", "order", "todo")
+				s.ExpectExec("INSERT INTO (.+)").WithArgs("1", "order_created", "1", "order", "todo").WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			wantErr: false,
 		},
@@ -52,7 +50,7 @@ func TestCreateEvent(t *testing.T) {
 				},
 			},
 			beforeTest: func(s sqlmock.Sqlmock) {
-				s.ExpectQuery("INSERT INTO events(id, eventtype, aggregateid, aggregatetype, eventdata, stream) VALUES ($1, $2, $3, $4, $5, $6);").WithArgs("1", "order_created", "1", "order", "publishing buy-order", "todo")
+				s.ExpectExec("INSERT (.*)").WithArgs("1", "order_created", "1", "order", "publishing buy-order", "todo").WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			wantErr: false,
 		},
@@ -71,7 +69,7 @@ func TestCreateEvent(t *testing.T) {
 
 			err := db.CreateEvent(tt.args.ctx, tt.args.input)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("sqliteRepo.CreateEvent wantErr %v, err %v", tt.wantErr, err)
+				t.Errorf("dbRepo.CreateEvent wantErr: %v, err: %v", tt.wantErr, err)
 			}
 		})
 	}

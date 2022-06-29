@@ -56,7 +56,7 @@ func setupSchema(db *sql.DB) error {
 
 func (d *sqliteRepository) CreateEvent(ctx context.Context, event *eventstore.Event) error {
 	var e error
-	query := "INSERT INTO events (id, eventtype, aggregateid, aggregatetype, eventdata, stream) VALUES ($1, $2, $3, $4, $5, $6);"
+	query := "INSERT INTO events(id, eventtype, aggregateid, aggregatetype, eventdata, stream) VALUES($1, $2, $3, $4, $5, $6);"
 	if event.EventData == "" {
 		query = strings.Replace(query, "$5", "NULL", 1)
 		query = strings.Replace(query, "$6", "$5", 1)
