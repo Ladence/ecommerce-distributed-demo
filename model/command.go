@@ -5,3 +5,8 @@ type PaymentDebitedCommand struct {
 	CustomerID string
 	Amount     float64
 }
+
+type ChangeOrderStatusCommand struct {
+	OrderID string
+	Status  string
+}
