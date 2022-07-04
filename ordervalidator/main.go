@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/Ladence/ecommerce-distributed-demo/eventstore"
 	"github.com/Ladence/ecommerce-distributed-demo/model"
+	"github.com/Ladence/ecommerce-distributed-demo/ordersvc/storage"
+	db_repository "github.com/Ladence/ecommerce-distributed-demo/ordersvc/storage/db-repository"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"google.golang.org/grpc"
@@ -21,7 +23,8 @@ const (
 )
 
 type PaymentDebitConsumer struct {
-	ntCtx nats.JetStreamContext
+	ordersRepository storage.Repository
+	ntCtx            nats.JetStreamContext
 }
 
 func (pdc *PaymentDebitConsumer) subscribeQueue(subject, queue string) error {
@@ -76,8 +79,9 @@ func executeOrderApprovedCommand(cmd *model.ChangeOrderStatusCommand) error {
 	}
 	return nil
 }
-func newPaymentDebitConsumer(ntCtx nats.JetStreamContext) *PaymentDebitConsumer {
-	return &PaymentDebitConsumer{ntCtx: ntCtx}
+
+func newPaymentDebitConsumer(ntCtx nats.JetStreamContext, repository storage.Repository) *PaymentDebitConsumer {
+	return &PaymentDebitConsumer{ntCtx: ntCtx, ordersRepository: repository}
 }
 
 func main() {
@@ -87,7 +91,11 @@ func main() {
 	}
 	ntCtx, _ := conn.JetStream()
 
-	pdc := newPaymentDebitConsumer(ntCtx)
+	cockroachRepo, err := db_repository.NewCockroachRepository("")
+	if err != nil {
+		log.Fatalf("error on creating cockroach repository: %v", err)
+	}
+	pdc := newPaymentDebitConsumer(ntCtx, cockroachRepo)
 	if err := pdc.subscribeQueue(subscribeSubj, subscribeQueue); err != nil {
 		log.Fatalf("error on subscribing queue: %v", err)
 	}
