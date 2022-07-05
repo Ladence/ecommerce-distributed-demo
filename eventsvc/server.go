@@ -54,10 +54,10 @@ func main() {
 	port := flag.String("port", "50001", "port for grpc server")
 	flag.Parse()
 
-	conn, _ := net.Listen("tcp", fmt.Sprintf("localhost:%s", port))
+	conn, _ := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", port))
 	grpcServer := grpc.NewServer()
 
-	ntConn, err := nats.Connect(nats.DefaultURL)
+	ntConn, err := nats.Connect("nats:4222")
 	if err != nil {
 		log.Fatalf("error on connecting natsCtx: %v", err)
 	}
