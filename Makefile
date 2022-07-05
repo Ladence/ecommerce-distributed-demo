@@ -10,4 +10,7 @@ build_ordersvc:
 build_paymentmanager:
 	go build -o .build/paymentmanager paymentmanager/main.go
 
-build_all: build_eventsvc build_paymentmanager build_ordersvc
+build_ordervalidator:
+	go build -o .build/ordervalidator ordervalidator/main.go
+
+build_all: build_eventsvc build_paymentmanager build_ordersvc build_ordervalidator

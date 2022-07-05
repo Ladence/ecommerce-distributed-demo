@@ -1,0 +1,44 @@
+services:
+  cockroachdb:
+    image: cockroachdb/cockroach:v19.2.2
+    ports:
+      - 26257:26257
+      - 8080:8080
+    command: start-single-node --insecure
+    volumes:
+      - "./cockroach-data/roach1:/cockroach/cockroach-data"
+  nats:
+    image: nats
+    ports:
+      - 4222:4222
+  eventstoresvc:
+    build: .
+    depends_on:
+      - nats
+    ports:
+      - 50001:50001
+    entrypoint:
+      .build/eventsvc
+#  ordersvc:
+#    build: .
+#    depends_on:
+#      - eventstoresvc
+#    ports:
+#      - 3001:3001
+#    entrypoint:
+#      .build/ordersvc
+#  ordervalidator:
+#    build: .
+#    depends_on:
+#      - ordersvc
+#      - cockroachdb
+#      - nats
+#    entrypoint:
+#      .build/ordervalidator
+#  paymentmanager:
+#    build: .
+#    depends_on:
+#      - eventstoresvc
+#      - nats
+#    entrypoint:
+#      .build/paymentmanager
