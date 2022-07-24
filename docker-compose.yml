@@ -6,7 +6,7 @@ services:
       - 8080:8080
     command: start-single-node --insecure
     volumes:
-      - "./cockroach-data/roach1:/cockroach/cockroach-data"
+      - "./.storage/cockroach-data/roach1:/cockroach/cockroach-data"
   nats:
     image: nats
     ports:
@@ -21,14 +21,14 @@ services:
       .build/eventsvc
     volumes:
       - "./.storage/:/build/storage/"
-#  ordersvc:
-#    build: .
-#    depends_on:
-#      - eventstoresvc
-#    ports:
-#      - 3001:3001
-#    entrypoint:
-#      .build/ordersvc
+  ordersvc:
+    build: .
+    depends_on:
+      - eventstoresvc
+    ports:
+      - 3001:3001
+    entrypoint:
+      .build/ordersvc
 #  ordervalidator:
 #    build: .
 #    depends_on:
