@@ -85,13 +85,14 @@ func newPaymentDebitConsumer(ntCtx nats.JetStreamContext, repository storage.Rep
 }
 
 func main() {
-	conn, err := nats.Connect(nats.DefaultURL)
+	conn, err := nats.Connect("0.0.0.0:4222")
 	if err != nil {
 		log.Fatalf("error on connecting nats with default url: %v", err)
 	}
 	ntCtx, _ := conn.JetStream()
 
-	cockroachRepo, err := db_repository.NewCockroachRepository("")
+	// todo: switch on evironment variables
+	cockroachRepo, err := db_repository.NewCockroachRepository("postgres://root@0.0.0.0:26257?sslmode=disable")
 	if err != nil {
 		log.Fatalf("error on creating cockroach repository: %v", err)
 	}

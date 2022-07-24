@@ -19,6 +19,8 @@ services:
       - 50001:50001
     entrypoint:
       .build/eventsvc
+    volumes:
+      - "./.storage/:/build/storage/"
 #  ordersvc:
 #    build: .
 #    depends_on:

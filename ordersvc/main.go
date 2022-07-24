@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"io/ioutil"
 	"log"
@@ -17,7 +18,7 @@ import (
 const (
 	defaultAddr   = ":3001"
 	apiVersion    = "v1"
-	eventStoreSvc = "localhost:50001"
+	eventStoreSvc = "0.0.0.0:50001"
 )
 
 func createOrderEvent(order *model.Order, orderBytes []byte) *eventstore.Event {
@@ -79,7 +80,7 @@ func initRoutes(oh *orderHandler) http.Handler {
 }
 
 func main() {
-	conn, err := grpc.Dial(eventStoreSvc)
+	conn, err := grpc.Dial(eventStoreSvc, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("error on establishing grpc connection: %v", err)
 	}

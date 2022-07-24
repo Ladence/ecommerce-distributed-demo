@@ -7,6 +7,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/file"
+	"log"
 	"strings"
 )
 
@@ -26,8 +27,11 @@ func NewSqliteRepository(connectionString string) (*sqliteRepository, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = setupSchema(dbEvents); err != nil {
-		return nil, err
+	if !isSchemaInitialized(context.TODO(), dbEvents) {
+		log.Println("schema non-initialized, going to migrations")
+		if err = setupSchema(dbEvents); err != nil {
+			return nil, err
+		}
 	}
 	return &sqliteRepository{
 		db: dbEvents,
@@ -52,6 +56,24 @@ func setupSchema(db *sql.DB) error {
 		return err
 	}
 	return nil
+}
+
+func isSchemaInitialized(ctx context.Context, db *sql.DB) bool {
+	query := "SELECT version FROM schema_migrations;"
+	rows, e := db.QueryContext(ctx, query)
+	if e != nil {
+		log.Println("SELECT version, err: %v", e)
+		return false
+	}
+	var version uint64
+	for rows.Next() {
+		e = rows.Scan(&version)
+	}
+	if e != nil {
+		log.Println("rows.Scan, err: %v", e)
+		return false
+	}
+	return version > 0
 }
 
 func (d *sqliteRepository) CreateEvent(ctx context.Context, event *eventstore.Event) error {

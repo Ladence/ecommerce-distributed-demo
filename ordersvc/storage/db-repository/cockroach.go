@@ -36,9 +36,9 @@ func NewCockroachRepository(connectionString string) (storage.Repository, error)
 	if err != nil {
 		return nil, err
 	}
-	if err = setupSchema(dbOrders); err != nil {
-		return nil, err
-	}
+	//if err = setupSchema(dbOrders); err != nil {
+	//	return nil, err
+	//}
 	return &CockroachRepository{
 		db: dbOrders,
 	}, nil

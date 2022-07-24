@@ -77,7 +77,7 @@ func executePaymentDebitedCommand(cmd *model.PaymentDebitedCommand) error {
 }
 
 func main() {
-	conn, err := nats.Connect(nats.DefaultURL)
+	conn, err := nats.Connect("0.0.0.0:4222")
 	if err != nil {
 		log.Fatalf("Error on establishing connection to nats")
 	}

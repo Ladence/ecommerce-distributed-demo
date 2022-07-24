@@ -67,7 +67,7 @@ func main() {
 		log.Fatalf("error on perceiving natsCtx JetStream context: %v", err)
 	}
 
-	repo, err := db_repository.NewSqliteRepository("events.db")
+	repo, err := db_repository.NewSqliteRepository("storage/events.db")
 	if err != nil {
 		log.Fatalf("error on creating sqlite repository: %v", err)
 	}
